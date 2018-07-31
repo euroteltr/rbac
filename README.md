@@ -169,3 +169,7 @@ if R.IsGranted(sysAdmRole.ID, usersPerm, rbac.CRUD) {
 ```
 
 If circular parent reference is found, you'll get error while running `AddParent`.
+
+## Usage as middleware
+
+You can check example middleware function for [echo](github.com/labstack/echo) framework [here](https://github.com/euroteltr/rbac/tree/master/middlewares/echorbac/example)
