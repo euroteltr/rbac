@@ -4,6 +4,8 @@
 
 RBAC is role based access control library for GOlang. At core uses `sync.Map` so, it can be used from multiple goroutines concurrently. "Keep it simple" is also in core.
 
+It supports role inheritence.
+
 It can be used in middleware(example for echo framework is [given](https://github.com/euroteltr/rbac#usage-as-middleware) )
 
 It is built on;
@@ -147,7 +149,7 @@ You can load this JSON data:
 if err := json.Unmarshal(b, R); err != nil {
     fmt.Errorf("rback unmarshall failed with %v\n", err)
 }
-// now you hav *RBAC instance => R
+// now you have *RBAC instance => R
 ```
 
 ## Role inheritance
