@@ -7,4 +7,6 @@ go:
 services:
 
 before_script:
+  - go get -t ./...
+  
 script: go test -v .
