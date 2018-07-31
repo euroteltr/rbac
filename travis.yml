@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - "1.9.x"
+  - "1.10.x"
+
+services:
+
+before_script:
+script: go test -v .
