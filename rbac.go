@@ -197,6 +197,28 @@ func (r *RBAC) IsGrantedStr(roleID string, permID string, actions ...Action) boo
 	return false
 }
 
+// AnyGranted checks if any role has the permission.
+func (r *RBAC) AnyGranted(roleIDs []string, perm *Permission, action ...Action) (res bool) {
+	for _, roleID := range roleIDs {
+		if r.IsGranted(roleID, perm, action...) {
+			res = true
+			break
+		}
+	}
+	return res
+}
+
+// AllGranted checks if all roles have the permission.
+func (r *RBAC) AllGranted(roleIDs []string, perm *Permission, action ...Action) (res bool) {
+	for _, roleID := range roleIDs {
+		if !r.IsGranted(roleID, perm, action...) {
+			res = true
+			break
+		}
+	}
+	return !res
+}
+
 // RoleGrants returns all roles
 func (r *RBAC) RoleGrants() []*RoleGrants {
 	res := []*RoleGrants{}
