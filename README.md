@@ -2,7 +2,7 @@
 
 RBAC is role based access control library for GOlang. At core uses `sync.Map` so, it can be used from multiple goroutines concurrently. "Keep it simple" is also in core.
 
-It can be used in middleware(example for echo framework is [given](#Usageasmiddleware) )
+It can be used in middleware(example for echo framework is [given](https://github.com/euroteltr/rbac#usage-as-middleware) )
 
 It is built on;
 
