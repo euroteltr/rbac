@@ -8,6 +8,8 @@ It supports role inheritence.
 
 It can be used in middleware(example for echo framework is [given](https://github.com/euroteltr/rbac#usage-as-middleware) )
 
+Go 1.9+ is required.
+
 It is built on;
 
 | Type       | Description                                             | Example                     |

@@ -1,4 +1,11 @@
-package rbac
+/*`rbac`` is role based access control library for GOlang. At core uses
+sync.Map so, it can be used from multiple goroutines concurrently.
+"Keep it simple" is also in core.
+
+It supports role inheritence.
+
+It can be used in middleware
+*/package rbac
 
 import (
 	"encoding/json"
@@ -9,7 +16,7 @@ import (
 
 var log Logger
 
-// RBAC is role bases access control
+// RBAC is role bases access control manager
 type RBAC struct {
 	sync.Map             // key: role.ID, value: role
 	permissions sync.Map // registered permissions
