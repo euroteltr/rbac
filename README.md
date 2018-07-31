@@ -1,6 +1,6 @@
 # RBAC - Simple, concurrent Role Based Access Control(GO)
 
-[![Build Status](https://travis-ci.org/euroteltr/rbac.svg?branch=master)](https://travis-ci.org/euroteltr/rbac) [![GoDoc](https://godoc.org/github.com/euroteltr/rbac?status.svg)](https://godoc.org/github.com/euroteltr/rbac)
+[![Build Status](https://travis-ci.org/euroteltr/rbac.svg?branch=master)](https://travis-ci.org/euroteltr/rbac) [![GoDoc](https://godoc.org/github.com/euroteltr/rbac?status.svg)](https://godoc.org/github.com/samonzeweb/godb)
 
 RBAC is role based access control library for GOlang. At core uses `sync.Map` so, it can be used from multiple goroutines concurrently. "Keep it simple" is also in core.
 
