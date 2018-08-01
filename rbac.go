@@ -29,12 +29,17 @@ type jsRBAC struct {
 
 // New returns a new RBAC instance
 func New(logger Logger) *RBAC {
+	SetLogger(logger)
+	return &RBAC{}
+}
+
+// SetLogger sets rbac logger
+func SetLogger(logger Logger) {
 	if logger != nil {
 		log = logger
 	} else {
 		log = &NullLogger{}
 	}
-	return &RBAC{}
 }
 
 // Clone clones RBAC instance
