@@ -18,7 +18,7 @@ Go 1.9+ is required.
 It is built on;
 
 | Type       | Description                                             | Example                     |
-|------------|---------------------------------------------------------|-----------------------------|
+| ---------- | ------------------------------------------------------- | --------------------------- |
 | Action     | Defines what can possible for a permission              | `Create`,`Read`,`Update`... |
 | Permission | Defines permission related to a resource to be accessed | `users`                     |
 | Role       | Defines group of permissions with defined actions       | `admin`                     |
@@ -35,7 +35,7 @@ Library usage has 2 phases:
 First get an instance for `RBAC`
 
 ```go
-import rbac
+import "github.com/euroteltr/rbac"
 
 R := rbac.New(nil)
 // you can pass a logger to constructor also:
