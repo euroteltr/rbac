@@ -1,10 +1,13 @@
 # RBAC - Simple, concurrent Role Based Access Control(GO)
 
 [![Build Status](https://travis-ci.org/euroteltr/rbac.svg?branch=master)](https://travis-ci.org/euroteltr/rbac)
-[![Codecov](https://img.shields.io/codecov/c/github.com/euroteltr/rbac.svg?style=plastic)](github.com/euroteltr/rbac)
+[![Go Report Card](https://goreportcard.com/badge/github.com/euroteltr/rbac)](https://goreportcard.com/report/github.com/euroteltr/rbac)
+[![Codecov](https://codecov.io/gh/euroteltr/rbac/branch/master/graph/badge.svg)](https://codecov.io/gh/euroteltr/rbac/branch/master/graph/)
 [![GoDoc](https://godoc.org/github.com/euroteltr/rbac?status.svg)](https://godoc.org/github.com/euroteltr/rbac)
-[![GitHub release](https://img.shields.io/github/release/euroteltr/rbac.svg)](https://github.com/euroteltr/rbac/releases/latest)
+[![GitHub release](https://img.shields.io/github/release/euroteltr/rbac.svg)](https://github.com/euroteltr/rbac/releases/latest) 
+[![License](https://img.shields.io/badge/license-mit-blue.svg)](https://github.com/euroteltr/rbac/blob/master/LICENCE.txt)
 
+github.com/euroteltr/rbac
 RBAC is role based access control library for GOlang. At core uses `sync.Map` so, it can be used from multiple goroutines concurrently. "Keep it simple" is also in core.
 
 It supports role inheritence.
