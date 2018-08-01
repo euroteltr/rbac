@@ -1,6 +1,9 @@
 # RBAC - Simple, concurrent Role Based Access Control(GO)
 
-[![Build Status](https://travis-ci.org/euroteltr/rbac.svg?branch=master)](https://travis-ci.org/euroteltr/rbac) [![GoDoc](https://godoc.org/github.com/euroteltr/rbac?status.svg)](https://godoc.org/github.com/euroteltr/rbac)
+[![Build Status](https://travis-ci.org/euroteltr/rbac.svg?branch=master)](https://travis-ci.org/euroteltr/rbac)
+[![Codecov](https://img.shields.io/codecov/c/github.com/euroteltr/rbac.svg?style=plastic)](github.com/euroteltr/rbac)
+[![GoDoc](https://godoc.org/github.com/euroteltr/rbac?status.svg)](https://godoc.org/github.com/euroteltr/rbac)
+[![GitHub release](https://img.shields.io/github/release/euroteltr/rbac.svg)](https://github.com/euroteltr/rbac/releases/latest)
 
 RBAC is role based access control library for GOlang. At core uses `sync.Map` so, it can be used from multiple goroutines concurrently. "Keep it simple" is also in core.
 
@@ -13,7 +16,7 @@ Go 1.9+ is required.
 It is built on;
 
 | Type       | Description                                             | Example                     |
-| ---------- | ------------------------------------------------------- | --------------------------- |
+|------------|---------------------------------------------------------|-----------------------------|
 | Action     | Defines what can possible for a permission              | `Create`,`Read`,`Update`... |
 | Permission | Defines permission related to a resource to be accessed | `users`                     |
 | Role       | Defines group of permissions with defined actions       | `admin`                     |
