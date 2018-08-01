@@ -4,9 +4,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/euroteltr/rbac)](https://goreportcard.com/report/github.com/euroteltr/rbac)
 [![Codecov](https://codecov.io/gh/euroteltr/rbac/branch/master/graph/badge.svg)](https://codecov.io/gh/euroteltr/rbac/branch/master/graph/)
 [![GoDoc](https://godoc.org/github.com/euroteltr/rbac?status.svg)](https://godoc.org/github.com/euroteltr/rbac)
-[![GitHub release](https://img.shields.io/github/release/euroteltr/rbac.svg)](https://github.com/euroteltr/rbac/releases/latest) 
+[![GitHub release](https://img.shields.io/github/release/euroteltr/rbac.svg)](https://github.com/euroteltr/rbac/releases/latest)
 [![License](https://img.shields.io/badge/license-mit-blue.svg)](https://github.com/euroteltr/rbac/blob/master/LICENCE.txt)
-
 
 RBAC is role based access control library for GOlang. At core uses `sync.Map` so, it can be used from multiple goroutines concurrently. "Keep it simple" is also in core.
 
