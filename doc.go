@@ -41,7 +41,7 @@ with valid actions for that permission:
 
 `userPerm` is defined with CRUD actions, which means that any action not in that list will be invalid. You can define your own actions( like `ApproveAction := rbac.Action("approve")`) and add them also.
 
-Runtime Phase
+Runtime Phase:
 
 At run time we define our roles and permit permissions to them.
 

@@ -4,7 +4,7 @@ sync.Map so, it can be used from multiple goroutines concurrently.
 
 It supports role inheritance.
 
-It can be used in middleware
+It can be used in middleware.
 */package rbac
 
 import (
