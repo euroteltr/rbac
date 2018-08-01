@@ -21,7 +21,7 @@ Development Phase
 First get an instance for `RBAC`
 
 
-	import rbac
+	import "github.com/euroteltr/rbac"
 
 	R := rbac.New(nil)
 	// you can pass a logger to constructor also:
