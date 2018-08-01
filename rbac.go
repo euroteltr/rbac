@@ -2,7 +2,7 @@
 sync.Map so, it can be used from multiple goroutines concurrently.
 "Keep it simple" is also in core.
 
-It supports role inheritence.
+It supports role inheritance.
 
 It can be used in middleware
 */package rbac

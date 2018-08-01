@@ -10,7 +10,7 @@
 github.com/euroteltr/rbac
 RBAC is role based access control library for GOlang. At core uses `sync.Map` so, it can be used from multiple goroutines concurrently. "Keep it simple" is also in core.
 
-It supports role inheritence.
+It supports role inheritance.
 
 It can be used in middleware(example for echo framework is [given](https://github.com/euroteltr/rbac#usage-as-middleware) )
 
@@ -117,7 +117,7 @@ if err = R.LoadJSON("/tmp/rbac.json"); err != nil {
 }
 ```
 
-In dumped JSON root "permissons" part is for reference. Root `roles` is the part you can modify in file and reload it to define `Role`s with `Permission`s.
+In dumped JSON root "permissions" part is for reference. Root `roles` is the part you can modify in file and reload it to define `Role`s with `Permission`s.
 
 ```json
 {

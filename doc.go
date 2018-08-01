@@ -99,7 +99,7 @@ And load it from file:
 	}
 
 
-In dumped JSON root "permissons" part is for reference. Root `roles` is the part you can modify in file and reload it to define `Role`s with `Permission`s.
+In dumped JSON root "permissions" part is for reference. Root `roles` is the part you can modify in file and reload it to define `Role`s with `Permission`s.
 
 
 	{
