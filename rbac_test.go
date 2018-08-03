@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 )
@@ -79,13 +80,26 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("rback marshall failed with %v", err)
 	}
 
-	if err = R.SaveJSON("/tmp/rbac.json"); err != nil {
+	filename := "/tmp/rbac.json"
+	RNew := R.Clone(false)
+	fw, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		t.Fatalf("unable to create json file, err:%v", err)
+	}
+	if err = R.SaveJSON(fw); err != nil {
 		t.Fatalf("unable to save to json file, err:%v", err)
 	}
-	RNew := R.Clone(false)
-	if err = RNew.LoadJSON("/tmp/rbac.json"); err != nil {
+	defer fw.Close()
+
+	f, err := os.Open(filename)
+	if err != nil {
+		t.Fatalf("can not open temp file: %v", err)
+	}
+	defer f.Close()
+	if err = RNew.LoadJSON(f); err != nil {
 		t.Fatalf("unable to load from json file, err:%v", err)
 	}
+
 	if !RNew.IsGranted(sysAdmRole.ID, usersPerm, crudActions...) {
 		t.Fatalf("sysadmin role should have all crud actions granted")
 	}

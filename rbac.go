@@ -10,7 +10,7 @@ It can be used in middleware.
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"sync"
 )
 
@@ -304,25 +304,14 @@ func (r *RBAC) UnmarshalJSON(b []byte) (err error) {
 	return nil
 }
 
-// LoadJSON loads all data from json file
-func (r *RBAC) LoadJSON(filename string) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return json.NewDecoder(f).Decode(r)
+// LoadJSON loads all data from a reader
+func (r *RBAC) LoadJSON(reader io.Reader) error {
+	return json.NewDecoder(reader).Decode(r)
 }
 
-// SaveJSON saves all to a file
-func (r *RBAC) SaveJSON(filename string) error {
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Errorf("can not load json file %s, err: %v", filename, err)
-		return err
-	}
-	defer f.Close()
-	enc := json.NewEncoder(f)
+// SaveJSON saves all to a writer
+func (r *RBAC) SaveJSON(writer io.Writer) (err error) {
+	enc := json.NewEncoder(writer)
 	enc.SetIndent("", "  ")
 	if err = enc.Encode(jsRBAC{
 		Roles:       r.RoleGrants(),

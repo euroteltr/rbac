@@ -100,10 +100,17 @@ if err != nil {
 }
 ```
 
-Also you can use builtin `SaveJSON` function to save to a file:
+Also you can use builtin `SaveJSON` function to save to a `io.Writer`:
 
 ```go
-if err = R.SaveJSON("/tmp/rbac.json"); err != nil {
+filename := "/tmp/rbac.json"
+f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+if err != nil {
+    fmt.Printf("can not load json file %s, err: %v\n", filename, err)
+    return err
+}
+defer f.Close()
+if err = R.SaveJSON(f); err != nil {
     fmt.Printf("unable to save to json file, err:%v\n", err)
 }
 ```
@@ -111,12 +118,18 @@ if err = R.SaveJSON("/tmp/rbac.json"); err != nil {
 And load it from file:
 
 ```go
-if err = R.LoadJSON("/tmp/rbac.json"); err != nil {
+filename := "/tmp/rbac.json"
+f, err := os.Open(filename)
+if err != nil {
+    return err
+}
+defer f.Close()
+if err = R.LoadJSON(f); err != nil {
     fmt.Errorf("unable to load from json file, err:%v\n", err)
 }
 ```
 
-In dumped JSON root "permissions" part is for reference. Root `roles` is the part you can modify in file and reload it to define `Role`s with `Permission`s.
+In dumped JSON root `permissions` part is just for reference. Root `roles` is the part you can modify in file and reload it to define `Role`s with `Permission`s.
 
 ```json
 {
@@ -150,15 +163,6 @@ In dumped JSON root "permissions" part is for reference. Root `roles` is the par
 }
 ```
 
-You can load this JSON data:
-
-```go
-if err := json.Unmarshal(b, R); err != nil {
-    fmt.Errorf("rback unmarshall failed with %v\n", err)
-}
-// now you have *RBAC instance => R
-```
-
 ## Role inheritance
 
 A `Role` can have parent `Role`s. You can add a parent `Role` like this:
@@ -186,3 +190,34 @@ If circular parent reference is found, you'll get error while running `AddParent
 ## Usage as middleware
 
 You can check example middleware function for [echo](github.com/labstack/echo) framework [here](https://github.com/euroteltr/rbac/tree/master/middlewares/echorbac/example)
+
+## Middleware usage with granular permissions
+
+If you want `user` role may modify his own user resource, but not others, you can build a wrapper for `RBAC.IsGranted` function like(example for `echo` framework:
+
+```go
+// idParam is the parameter name where user_id for data will be gotten
+func isGrantedResource(perm *rbac.Permission, action rbac.Action, idParam string) echo.MiddlewareFunc {
+    return func(next echo.HandlerFunc) echo.HandlerFunc {
+        return func(c echo.Context) error {
+            rolesI := c.Get("roles")
+            if rolesI == nil {
+                log.Errorf("No rbac roles key %s", "roles")
+            } else if config.RBAC.AnyGranted(rolesI.([]string), perm, actions...) {
+                // Get id parameter from route,form... example from: "user/:id"
+                userID, err := strconv.ParseInt(c.Param(idParam), 10, 64)
+                if err != nil {
+                    return http.StatusBadRequest
+                }
+                // Get current user_id and check if data belongs to current user
+                userIDI := c.Get("user_id")
+                if userIDI==nil || userIDI.(int64) != userID {
+                    return http.StatusForbidden
+                }
+                return next(c)
+            }
+            return echo.ErrUnauthorized
+        }
+    }
+}
+```
