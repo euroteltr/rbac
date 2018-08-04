@@ -84,9 +84,16 @@ Persisting and Loading
 	}
 
 
-Also you can use builtin `SaveJSON` function to save to a file:
+Also you can use builtin SaveJSON function to save to a io.Writer:
 
-	if err = R.SaveJSON("/tmp/rbac.json"); err != nil {
+	filename := "/tmp/rbac.json"
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("can not load json file %s, err: %v\n", filename, err)
+		return err
+	}
+	defer f.Close()
+	if err = R.SaveJSON(f); err != nil {
 		fmt.Printf("unable to save to json file, err:%v\n", err)
 	}
 
@@ -94,7 +101,13 @@ Also you can use builtin `SaveJSON` function to save to a file:
 And load it from file:
 
 
-	if err = R.LoadJSON("/tmp/rbac.json"); err != nil {
+	filename := "/tmp/rbac.json"
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if err = R.LoadJSON(f); err != nil {
 		fmt.Errorf("unable to load from json file, err:%v\n", err)
 	}
 
@@ -131,13 +144,6 @@ In dumped JSON root "permissions" part is for reference. Root `roles` is the par
 		}
 	]
 	}
-
-You can load this JSON data:
-
-	if err := json.Unmarshal(b, R); err != nil {
-		fmt.Errorf("rback unmarshall failed with %v\n", err)
-	}
-	// now you have *RBAC instance => R
 
 Role inheritance
 
