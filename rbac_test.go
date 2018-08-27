@@ -75,6 +75,18 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("sysadmin role should have all crud actions granted")
 	}
 
+	if !adminRole.isGranted(usersPerm, crudActions...) {
+		t.Fatalf("admin role should have all crud actions granted")
+	}
+
+	if err = sysAdmRole.RemoveParent(adminRole); err != nil {
+		t.Fatalf("removing parent role failed with: %v", err)
+	}
+
+	if err = sysAdmRole.AddParent(adminRole); err != nil {
+		t.Fatalf("adding parent role failed with: %v", err)
+	}
+
 	b, err := json.Marshal(R)
 	if err != nil {
 		t.Fatalf("rback marshall failed with %v", err)
@@ -146,5 +158,17 @@ func TestRBAC(t *testing.T) {
 		if !found {
 			t.Fatalf("Delete action is missing in users permission for all permissions of admin role")
 		}
+	}
+
+	if R2.RemoveRole(sysAdmRole.ID); err != nil {
+		t.Fatalf("removing role failed with: %v", err)
+	}
+
+	if R2.Revoke(adminRole.ID, usersPerm, Delete); err != nil {
+		t.Fatalf("removing perm from role failed with: %v", err)
+	}
+
+	if !hasAction(usersPerm.Actions(), Delete) {
+		t.Fatalf("perm should have delete action")
 	}
 }
