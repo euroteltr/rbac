@@ -1,7 +1,9 @@
 package rbac
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -170,5 +172,31 @@ func TestRBAC(t *testing.T) {
 
 	if !hasAction(usersPerm.Actions(), Delete) {
 		t.Fatalf("perm should have delete action")
+	}
+}
+
+func TestDefaultLogger(t *testing.T) {
+	var buf bytes.Buffer
+	old := os.Stdout // keep backup of the real stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	logger := NewNullLogger()
+	SetLogger(logger)
+	log.Debugf("TEST")
+	log.Errorf("TEST2")
+
+	outC := make(chan string)
+	// copy the output in a separate goroutine so printing can't block indefinitely
+	go func() {
+		io.Copy(&buf, r)
+		outC <- buf.String()
+	}()
+
+	w.Close()
+	os.Stdout = old // restoring the real stdout
+	_ = <-outC
+
+	if string(buf.Bytes()) != "" {
+		t.Fatalf("logger output is not compatible, expected: `%s`, got: `%s`", "", buf.Bytes())
 	}
 }
