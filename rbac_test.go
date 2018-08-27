@@ -3,6 +3,7 @@ package rbac
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"strings"
@@ -173,6 +174,13 @@ func TestRBAC(t *testing.T) {
 	if !hasAction(usersPerm.Actions(), Delete) {
 		t.Fatalf("perm should have delete action")
 	}
+
+	if R2.AnyGranted([]string{adminRole.ID, sysAdmRole.ID}, usersPerm, Delete) {
+		t.Fatalf("roles should not have users.delete")
+	}
+	if R2.AllGranted([]string{adminRole.ID, sysAdmRole.ID}, usersPerm, Create) {
+		t.Fatalf("roles should have users.create")
+	}
 }
 
 func TestDefaultLogger(t *testing.T) {
@@ -182,8 +190,8 @@ func TestDefaultLogger(t *testing.T) {
 	os.Stdout = w
 	logger := NewNullLogger()
 	SetLogger(logger)
-	log.Debugf("TEST")
-	log.Errorf("TEST2")
+	log.Debugf("TEST %v", 1)
+	log.Errorf("TEST2 %v", errors.New("test"))
 
 	outC := make(chan string)
 	// copy the output in a separate goroutine so printing can't block indefinitely
