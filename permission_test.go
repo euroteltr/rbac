@@ -20,4 +20,12 @@ func TestPermission(t *testing.T) {
 	if err != nil {
 		t.Fatalf("users json marshall failed with %v", err)
 	}
+	if usersPerm.String() != "Permission{ID: users, Description: User resource}" {
+		t.Fatalf("users string value is inconsistent")
+	}
+	testPerm := newPermission("test", "Test", CRUD)
+	if len(testPerm.Actions()) != len(crudActions) {
+		t.Fatalf("test permission actions are not valid, expected %d items, got %d items", len(crudActions), len(testPerm.Actions()))
+	}
+
 }
