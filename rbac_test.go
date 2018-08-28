@@ -131,7 +131,7 @@ func TestRBAC(t *testing.T) {
 	if !R2.IsGranted(adminRole.ID, usersPerm, crudActions...) {
 		t.Fatalf("loaded admin role should have all crud actions granted")
 	}
-	aPerms := R2.GetAllPermissions(adminRole.ID)
+	aPerms := R2.GetAllPermissions([]string{adminRole.ID})
 	if us, ok := aPerms[usersPerm.ID]; !ok {
 		t.Fatalf("users permission must exit in all perms of sysadmin role(inherited)")
 	} else {
@@ -147,7 +147,7 @@ func TestRBAC(t *testing.T) {
 		}
 	}
 
-	sPerms := R2.GetAllPermissions(sysAdmRole.ID)
+	sPerms := R2.GetAllPermissions([]string{sysAdmRole.ID})
 	if us, ok := sPerms[usersPerm.ID]; !ok {
 		t.Fatalf("users permission must exit in all perms of admin role")
 	} else {

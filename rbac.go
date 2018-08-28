@@ -219,12 +219,12 @@ func hasAction(actions []Action, action Action) bool {
 }
 
 // GetAllPermissions returns granted permissions for a role(including inherited permissions from parents)
-func (r *RBAC) GetAllPermissions(roleID string) (perms map[string][]Action) {
-	if role, ok := r.Load(roleID); ok {
-		perms = role.(*Role).getGrants()
-		for _, pr := range role.(*Role).Parents() {
-			for k, v := range pr.getGrants() {
-				// Merge permission actions with parent's actions
+func (r *RBAC) GetAllPermissions(roleIDs []string) map[string][]Action {
+	perms := map[string][]Action{}
+	for _, roleID := range roleIDs {
+		if role, ok := r.Load(roleID); ok {
+			// Merge permission actions
+			for k, v := range role.(*Role).getGrants() {
 				if actions, ok := perms[k]; ok {
 					for _, a := range v {
 						if !hasAction(actions, a) {
@@ -236,11 +236,26 @@ func (r *RBAC) GetAllPermissions(roleID string) (perms map[string][]Action) {
 					perms[k] = v
 				}
 			}
+			// Merge permission actions with parent's actions
+			for _, pr := range role.(*Role).Parents() {
+				for k, v := range pr.getGrants() {
+					if actions, ok := perms[k]; ok {
+						for _, a := range v {
+							if !hasAction(actions, a) {
+								actions = append(actions, a)
+							}
+						}
+						perms[k] = actions
+					} else {
+						perms[k] = v
+					}
+				}
+			}
+		} else {
+			log.Errorf("Role with ID %s is not found", roleID)
 		}
-	} else {
-		log.Errorf("Role with ID %s is not found", roleID)
 	}
-	return
+	return perms
 }
 
 // AnyGranted checks if any role has the permission.
