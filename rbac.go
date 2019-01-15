@@ -205,7 +205,6 @@ func (r *RBAC) IsGrantedStr(roleID string, permID string, actions ...Action) boo
 			}
 		}
 	}
-	log.Errorf("Role with ID %s is not found while checking grants for perm %s", roleID, permID)
 	return false
 }
 

@@ -64,8 +64,8 @@ func (r *Role) isGrantedStr(pID string, actions ...Action) bool {
 	if acts, ok := r.Load(pID); ok {
 		for _, a := range actions {
 			resI, ok := acts.(*sync.Map).Load(a)
-			if !ok || resI.(bool) == false {
-				log.Debugf("action %s is not granted to perm %s, found %v, %v", a, pID, ok, resI.(bool))
+			if !ok || resI == nil || resI.(bool) == false {
+				log.Debugf("action %s is not granted to perm %s, found %v, %v", a, pID, ok, resI)
 				return false
 			}
 		}
