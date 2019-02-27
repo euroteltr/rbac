@@ -40,6 +40,16 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("should have 2 permissions registered, got %d", len(R.Permissions()))
 	}
 
+	noparentRole, err := R.RegisterRole("noparent", "NoParent role")
+	if err != nil {
+		t.Fatalf("can not add admin role, err: %v", err)
+	}
+
+	viewerRole, err := R.RegisterRole("viewer", "Viewer role")
+	if err != nil {
+		t.Fatalf("can not add admin role, err: %v", err)
+	}
+
 	adminRole, err := R.RegisterRole("admin", "Admin role")
 	if err != nil {
 		t.Fatalf("can not add admin role, err: %v", err)
@@ -66,11 +76,35 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("can not add agent role, err: %v", err)
 	}
 
+	if err = adminRole.AddParent(viewerRole); err != nil {
+		t.Fatalf("adding parent role failed with: %v", err)
+	}
+
 	if err = sysAdmRole.AddParent(adminRole); err != nil {
 		t.Fatalf("adding parent role failed with: %v", err)
 	}
 
 	if err = adminRole.AddParent(sysAdmRole); strings.Index(err.Error(), "circular") == -1 {
+		t.Fatalf("circular parent check failed with err: %v", err)
+	}
+
+	if ok := adminRole.HasParent(viewerRole.ID); !ok {
+		t.Fatalf("adminRole should have viewerRole as parent.")
+	}
+
+	if ok := sysAdmRole.HasParent(adminRole.ID); !ok {
+		t.Fatalf("sysAdmRole should have adminRole as parent.")
+	}
+
+	if ok := sysAdmRole.HasParent(viewerRole.ID); !ok {
+		t.Fatalf("sysAdmRole should have viewerRole as parent.")
+	}
+
+	if ok := sysAdmRole.HasParent(noparentRole.ID); ok {
+		t.Fatalf("sysAdmRole should not have noparentRole as parent.")
+	}
+
+	if err = viewerRole.AddParent(sysAdmRole); strings.Index(err.Error(), "circular") == -1 {
 		t.Fatalf("circular parent check failed with err: %v", err)
 	}
 
