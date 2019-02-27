@@ -94,8 +94,26 @@ func (r *Role) getGrants() grantsMap {
 
 // HasParent checks if a role is in parent roles
 func (r *Role) HasParent(parentID string) bool {
-	_, ok := r.parents.Load(parentID)
+	ok := hasParentDeep(r, parentID)
 	return ok
+}
+
+// hasParentDeep check the parent tree for the parentID
+func hasParentDeep(child *Role, parentID string) (found bool) {
+	if _, ok := child.parents.Load(parentID); ok {
+		return ok
+	}
+	found = false
+	child.parents.Range(func(key, value interface{}) bool {
+		found = hasParentDeep(value.(*Role), parentID)
+		if found {
+			// returning false breaks out of Range call.
+			return false
+		}
+		// returning true continues Range call.
+		return true
+	})
+	return found
 }
 
 // AddParent Adds parent role
