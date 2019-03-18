@@ -78,6 +78,16 @@ func (r *RBAC) IsPermissionExist(permissionID string, action Action) (res bool) 
 	return res
 }
 
+// GetPermission returns the permission if exists.  perm is nil if not found.
+func (r *RBAC) GetPermission(permissionID string) *Permission {
+	perm, ok := r.permissions.Load(permissionID)
+	if !ok {
+		log.Errorf("permission %s is not registered", permissionID)
+		return nil
+	}
+	return perm.(*Permission)
+}
+
 //RegisterRole defines and registers a role
 func (r *RBAC) RegisterRole(roleID string, description string) (*Role, error) {
 	if r.IsRoleExist(roleID) {

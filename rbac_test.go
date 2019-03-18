@@ -40,6 +40,19 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("should have 2 permissions registered, got %d", len(R.Permissions()))
 	}
 
+	testPerm := R.GetPermission("users")
+	if testPerm == nil {
+		t.Fatalf("'users' permission should exists.")
+	}
+	if testPerm.ID != "users" {
+		t.Fatalf("'users' permission ID should match 'users'.")
+	}
+
+	testPerm = R.GetPermission("nonExistantPermission")
+	if testPerm != nil {
+		t.Fatalf("'nonExistantPermission' permission should NOT exists.")
+	}
+
 	noparentRole, err := R.RegisterRole("noparent", "NoParent role")
 	if err != nil {
 		t.Fatalf("can not add admin role, err: %v", err)
