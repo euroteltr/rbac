@@ -60,20 +60,30 @@ func (r *Role) isGranted(p *Permission, actions ...Action) (res bool) {
 	return r.isGrantedStr(p.ID, actions...)
 }
 
-func (r *Role) isGrantedStr(pID string, actions ...Action) bool {
+func (r *Role) isGrantedStr(pID string, actions ...Action) (res bool) {
 	if acts, ok := r.Load(pID); ok {
+		res = true
 		for _, a := range actions {
 			resI, ok := acts.(*sync.Map).Load(a)
 			if !ok || resI == nil || resI.(bool) == false {
 				log.Debugf("action %s is not granted to perm %s, found %v, %v", a, pID, ok, resI)
-				return false
+				res = false
+				break
 			}
 		}
-		return true
 	}
-	log.Debugf("permission %s is not granted to role %s", pID, r.ID)
-
-	return false
+	if !res {
+		r.parents.Range(func(key, value interface{}) bool {
+			res = value.(*Role).isGrantedStr(pID, actions...)
+			if res {
+				// returning false breaks out of Range call.
+				return false
+			}
+			// returning true continues Range call.
+			return true
+		})
+	}
+	return res
 }
 
 func (r *Role) getGrants() grantsMap {

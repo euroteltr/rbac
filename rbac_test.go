@@ -40,6 +40,19 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("should have 2 permissions registered, got %d", len(R.Permissions()))
 	}
 
+	var viewSomething *Permission
+	viewSomething, err = R.RegisterPermission("viewSomething", "view something", Read)
+	if err != nil {
+		t.Fatalf("can not register viewSomething permission, err: %v", err)
+	}
+	if !R.IsPermissionExist("viewSomething", Read) {
+		t.Fatalf("viewSomething permission with Read action should exit")
+	}
+
+	if len(R.Permissions()) != 3 {
+		t.Fatalf("should have 3 permissions registered, got %d", len(R.Permissions()))
+	}
+
 	testPerm := R.GetPermission("users")
 	if testPerm == nil {
 		t.Fatalf("'users' permission should exists.")
@@ -55,12 +68,20 @@ func TestRBAC(t *testing.T) {
 
 	noparentRole, err := R.RegisterRole("noparent", "NoParent role")
 	if err != nil {
-		t.Fatalf("can not add admin role, err: %v", err)
+		t.Fatalf("can not add noparent role, err: %v", err)
 	}
 
 	viewerRole, err := R.RegisterRole("viewer", "Viewer role")
 	if err != nil {
-		t.Fatalf("can not add admin role, err: %v", err)
+		t.Fatalf("can not add viewer role, err: %v", err)
+	}
+
+	if err = R.Permit(viewerRole.ID, viewSomething, Read); err != nil {
+		t.Fatalf("can not permit Read action to role %s", viewerRole.ID)
+	}
+
+	if !R.IsGranted(viewerRole.ID, viewSomething, Read) {
+		t.Fatalf("viewerRole role should have Read actions granted")
 	}
 
 	adminRole, err := R.RegisterRole("admin", "Admin role")
@@ -89,8 +110,16 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("can not add agent role, err: %v", err)
 	}
 
+	if R.IsGranted(adminRole.ID, viewSomething, Read) {
+		t.Fatalf("admin role should not have Read on viewSomething granted")
+	}
+
 	if err = adminRole.AddParent(viewerRole); err != nil {
 		t.Fatalf("adding parent role failed with: %v", err)
+	}
+
+	if !R.IsGranted(adminRole.ID, viewSomething, Read) {
+		t.Fatalf("admin role should have Read on viewSomething granted")
 	}
 
 	if err = sysAdmRole.AddParent(adminRole); err != nil {
