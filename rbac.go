@@ -206,14 +206,7 @@ func (r *RBAC) IsGrantedStr(roleID string, permID string, actions ...Action) boo
 			}
 			validActions = append(validActions, a)
 		}
-		if role.(*Role).isGrantedStr(permID, validActions...) {
-			return true
-		}
-		for _, pr := range role.(*Role).Parents() {
-			if pr.isGrantedStr(permID, validActions...) {
-				return true
-			}
-		}
+		return role.(*Role).isGrantedStr(permID, validActions...)
 	}
 	return false
 }
