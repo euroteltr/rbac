@@ -106,7 +106,7 @@ Also you can use builtin `SaveJSON` function to save to a `io.Writer`:
 filename := "/tmp/rbac.json"
 f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
 if err != nil {
-    fmt.Printf("can not load json file %s, err: %v\n", filename, err)
+    fmt.Printf("can not create json file %s, err: %v\n", filename, err)
     return err
 }
 defer f.Close()
