@@ -60,21 +60,39 @@ func (r *Role) isGranted(p *Permission, actions ...Action) (res bool) {
 	return r.isGrantedStr(p.ID, actions...)
 }
 
-func (r *Role) isGrantedStr(pID string, actions ...Action) (res bool) {
+func (r *Role) isGrantedStr(pID string, actions ...Action) bool {
+	if acts, ok := r.Load(pID); ok {
+		for _, a := range actions {
+			resI, ok := acts.(*sync.Map).Load(a)
+			if !ok || resI == nil || resI.(bool) == false {
+				log.Debugf("action %s is not granted to perm %s, found %v, %v", a, pID, ok, resI)
+				return false
+			}
+		}
+		return true
+	}
+	log.Debugf("permission %s is not granted to role %s", pID, r.ID)
+	return false
+}
+
+func (r *Role) isGrantInherited(p *Permission, actions ...Action) (res bool) {
+	return r.isGrantInheritedStr(p.ID, actions...)
+}
+
+func (r *Role) isGrantInheritedStr(pID string, actions ...Action) (res bool) {
 	if acts, ok := r.Load(pID); ok {
 		res = true
 		for _, a := range actions {
 			resI, ok := acts.(*sync.Map).Load(a)
 			if !ok || resI == nil || resI.(bool) == false {
 				log.Debugf("action %s is not granted to perm %s, found %v, %v", a, pID, ok, resI)
-				res = false
-				break
+				return false
 			}
 		}
 	}
 	if !res {
 		r.parents.Range(func(key, value interface{}) bool {
-			res = value.(*Role).isGrantedStr(pID, actions...)
+			res = value.(*Role).isGrantInheritedStr(pID, actions...)
 			if res {
 				// returning false breaks out of Range call.
 				return false
@@ -104,18 +122,24 @@ func (r *Role) getGrants() grantsMap {
 
 // HasParent checks if a role is in parent roles
 func (r *Role) HasParent(parentID string) bool {
-	ok := hasParentDeep(r, parentID)
+	_, ok := r.parents.Load(parentID)
 	return ok
 }
 
-// hasParentDeep check the parent tree for the parentID
-func hasParentDeep(child *Role, parentID string) (found bool) {
+// HasAncestor checks if a role is in parent roles
+func (r *Role) HasAncestor(parentID string) bool {
+	ok := hasAncestorDeep(r, parentID)
+	return ok
+}
+
+// hasAncestorDeep check the parent tree for the parentID
+func hasAncestorDeep(child *Role, parentID string) (found bool) {
 	if _, ok := child.parents.Load(parentID); ok {
-		return ok
+		return true
 	}
 	found = false
 	child.parents.Range(func(key, value interface{}) bool {
-		found = hasParentDeep(value.(*Role), parentID)
+		found = hasAncestorDeep(value.(*Role), parentID)
 		if found {
 			// returning false breaks out of Range call.
 			return false
@@ -132,7 +156,7 @@ func (r *Role) AddParent(parentRole *Role) error {
 		log.Errorf("parent role with ID %s is already defined for role %s", parentRole.ID, r.ID)
 		return fmt.Errorf("parent role with ID %s is already defined for role %s", parentRole.ID, r.ID)
 	}
-	if parentRole.HasParent(r.ID) {
+	if parentRole.HasAncestor(r.ID) {
 		log.Errorf("circular reference is found for parentrole:%s while adding to role:%s", parentRole.ID, r.ID)
 		return fmt.Errorf("circular reference is found for parentrole:%s while adding to role:%s", parentRole.ID, r.ID)
 	}

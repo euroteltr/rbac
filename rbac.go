@@ -101,18 +101,19 @@ func (r *RBAC) GetRole(roleID string) *Role {
 
 // RemoveRole deletes role from instance
 func (r *RBAC) RemoveRole(roleID string) error {
-	if !r.IsRoleExist(roleID) {
+	delRole := r.GetRole(roleID)
+	if delRole == nil {
 		log.Errorf("role %s is not registered", roleID)
 		return fmt.Errorf("role %s is  not registered", roleID)
 	}
-	r.Delete(roleID)
 	for _, role := range r.Roles() {
 		if role != nil {
 			if role.HasParent(roleID) {
-				role.RemoveParent(role)
+				role.RemoveParent(delRole)
 			}
 		}
 	}
+	r.Delete(roleID)
 	return nil
 }
 
@@ -196,7 +197,26 @@ func (r *RBAC) IsGrantedStr(roleID string, permID string, actions ...Action) boo
 			}
 			validActions = append(validActions, a)
 		}
-		return role.(*Role).isGrantedStr(permID, validActions...)
+		if role.(*Role).isGrantedStr(permID, validActions...) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsGranted checks if a role with target permission and actions has a grant
+func (r *RBAC) IsGrantInherited(roleID string, perm *Permission, actions ...Action) bool {
+	if perm == nil {
+		log.Errorf("Nil perm is sent for granted check for role %s", roleID)
+		return false
+	}
+	return r.IsGrantInheritedStr(roleID, perm.ID, actions...)
+}
+
+// IsGrantInheritedStr checks if permID is granted with target actions for role
+func (r *RBAC) IsGrantInheritedStr(roleID string, permID string, actions ...Action) bool {
+	if role, ok := r.Load(roleID); ok {
+		return role.(*Role).isGrantInheritedStr(permID, actions...)
 	}
 	return false
 }
@@ -252,13 +272,7 @@ func (r *RBAC) GetAllPermissions(roleIDs []string) map[string][]Action {
 
 // AnyGranted checks if any role has the permission.
 func (r *RBAC) AnyGranted(roleIDs []string, perm *Permission, action ...Action) (res bool) {
-	for _, roleID := range roleIDs {
-		if r.IsGranted(roleID, perm, action...) {
-			res = true
-			break
-		}
-	}
-	return res
+	return r.AnyGrantedStr(roleIDs, perm.ID, action...)
 }
 
 // AnyGrantedStr checks if any role has the permission.
@@ -274,13 +288,7 @@ func (r *RBAC) AnyGrantedStr(roleIDs []string, permName string, action ...Action
 
 // AllGranted checks if all roles have the permission.
 func (r *RBAC) AllGranted(roleIDs []string, perm *Permission, action ...Action) (res bool) {
-	for _, roleID := range roleIDs {
-		if !r.IsGranted(roleID, perm, action...) {
-			res = true
-			break
-		}
-	}
-	return !res
+	return r.AllGrantedStr(roleIDs, perm.ID, action...)
 }
 
 // AllGrantedStr checks if all roles have the permission.
@@ -292,6 +300,37 @@ func (r *RBAC) AllGrantedStr(roleIDs []string, permName string, action ...Action
 		}
 	}
 	return !res
+}
+
+// AnyGrantInherited checks if any role has the permission.
+func (r *RBAC) AnyGrantInherited(roleIDs []string, perm *Permission, action ...Action) (res bool) {
+	return r.AnyGrantInheritedStr(roleIDs, perm.ID, action...)
+}
+
+// AnyGrantInheritedStr checks if any role has the permission.
+func (r *RBAC) AnyGrantInheritedStr(roleIDs []string, permName string, action ...Action) (res bool) {
+	for _, roleID := range roleIDs {
+		if r.IsGrantInheritedStr(roleID, permName, action...) {
+			res = true
+			break
+		}
+	}
+	return res
+}
+
+// AllGrantInherited checks if all roles have the permission.
+func (r *RBAC) AllGrantInherited(roleIDs []string, perm *Permission, action ...Action) bool {
+	return r.AllGrantInheritedStr(roleIDs, perm.ID, action...)
+}
+
+// AllGrantedStr checks if all roles have the permission.
+func (r *RBAC) AllGrantInheritedStr(roleIDs []string, permName string, action ...Action) bool {
+	for _, roleID := range roleIDs {
+		if !r.IsGrantInheritedStr(roleID, permName, action...) {
+			return false
+		}
+	}
+	return true
 }
 
 // RoleGrants returns all roles
