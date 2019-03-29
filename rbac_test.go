@@ -18,6 +18,9 @@ func TestRBAC(t *testing.T) {
 	ApproveAction := Action("approve")
 
 	// Add permissions
+	if tPerm := R.GetPermission("users"); tPerm != nil {
+		t.Fatalf("usersPerm should not exist yet")
+	}
 	usersPerm, err := R.RegisterPermission("users", "User resource", crudActions...)
 	if err != nil {
 		t.Fatalf("can not register users permission, err: %v", err)
@@ -25,6 +28,9 @@ func TestRBAC(t *testing.T) {
 	_, err = R.RegisterPermission("users", "User resource", crudActions...)
 	if err == nil {
 		t.Fatalf("should not be able to register users permission twice")
+	}
+	if tPerm := R.GetPermission("users"); tPerm == nil {
+		t.Fatalf("usersPerm should exist")
 	}
 	if !R.IsPermissionExist(usersPerm.ID, "") {
 		t.Fatalf("users role should exit")
