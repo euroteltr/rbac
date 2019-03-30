@@ -11,129 +11,247 @@ import (
 )
 
 func TestRBAC(t *testing.T) {
+
+	// Add Actions
 	R := New(nil) //NewConsoleLogger()
 	crudActions := []Action{Create, Read, Update, Delete}
+	ApproveAction := Action("approve")
+
+	// Add permissions
+	if tPerm := R.GetPermission("users"); tPerm != nil {
+		t.Fatalf("usersPerm should not exist yet")
+	}
 	usersPerm, err := R.RegisterPermission("users", "User resource", crudActions...)
 	if err != nil {
 		t.Fatalf("can not register users permission, err: %v", err)
 	}
-
-	if !R.IsPermissionExist("users", "") {
+	_, err = R.RegisterPermission("users", "User resource", crudActions...)
+	if err == nil {
+		t.Fatalf("should not be able to register users permission twice")
+	}
+	if tPerm := R.GetPermission("users"); tPerm == nil {
+		t.Fatalf("usersPerm should exist")
+	}
+	if !R.IsPermissionExist(usersPerm.ID, "") {
 		t.Fatalf("users role should exit")
 	}
 	for _, action := range crudActions {
-		if !R.IsPermissionExist("users", action) {
+		if !R.IsPermissionExist(usersPerm.ID, action) {
 			t.Fatalf("users permission with action %s should exit", action)
 		}
 	}
 
-	ApproveAction := Action("approve")
-	_, err = R.RegisterPermission("posts", "Post resource", Create, Read, Update, Delete, ApproveAction)
+	postPerm, err := R.RegisterPermission("post", "Post resource", Create, Read, Update, Delete, ApproveAction)
 	if err != nil {
 		t.Fatalf("can not register posts permission, err: %v", err)
 	}
-	if !R.IsPermissionExist("posts", ApproveAction) {
+	if !R.IsPermissionExist(postPerm.ID, ApproveAction) {
 		t.Fatalf("posts permission with approve action should exit")
 	}
-
 	if len(R.Permissions()) != 2 {
 		t.Fatalf("should have 2 permissions registered, got %d", len(R.Permissions()))
 	}
 
-	testPerm := R.GetPermission("users")
-	if testPerm == nil {
-		t.Fatalf("'users' permission should exists.")
+	var viewSomething *Permission
+	viewSomething, err = R.RegisterPermission("viewSomething", "view something", Read)
+	if err != nil {
+		t.Fatalf("can not register viewSomething permission, err: %v", err)
 	}
-	if testPerm.ID != "users" {
-		t.Fatalf("'users' permission ID should match 'users'.")
+	if !R.IsPermissionExist(viewSomething.ID, Read) {
+		t.Fatalf("viewSomething permission with Read action should exit")
+	}
+	if len(R.Permissions()) != 3 {
+		t.Fatalf("should have 3 permissions registered, got %d", len(R.Permissions()))
 	}
 
-	testPerm = R.GetPermission("nonExistantPermission")
-	if testPerm != nil {
-		t.Fatalf("'nonExistantPermission' permission should NOT exists.")
+	// Test GetRole/RemoveRole
+	if tRole := R.GetRole("test_role"); tRole != nil {
+		t.Fatalf("test_role should not exists yet")
+	}
+	if err := R.RemoveRole("test_role"); err == nil {
+		t.Fatalf("test_role should not exists yet")
+	}
+	_, err = R.RegisterRole("test_role", "NoParent role")
+	if err != nil {
+		t.Fatalf("can not add test_role role, err: %v", err)
+	}
+	if tRole := R.GetRole("test_role"); tRole == nil {
+		t.Fatalf("test_role should exists")
+	}
+	if err := R.RemoveRole("test_role"); err != nil {
+		t.Fatalf("test_role get removed, err: %v", err)
 	}
 
+	// Add Roles
+	// noparent - stand alone role
+	//
+	// viewer - has viewSomething.Read permission
+	//   `-> admin - inherits from viewer.  has users.CRUD permission
+	// 	`-> sysAdmin - inherits admin.  Has post.CURD AND post.Approve permissions`
+
+	// noparent Role
 	noparentRole, err := R.RegisterRole("noparent", "NoParent role")
 	if err != nil {
-		t.Fatalf("can not add admin role, err: %v", err)
+		t.Fatalf("can not add noparent role, err: %v", err)
+	}
+	if tRole := R.GetRole(noparentRole.ID); tRole == nil {
+		t.Fatalf("noparentRole should exists")
 	}
 
+	// viewer Role
 	viewerRole, err := R.RegisterRole("viewer", "Viewer role")
 	if err != nil {
-		t.Fatalf("can not add admin role, err: %v", err)
+		t.Fatalf("can not add viewer role, err: %v", err)
 	}
 
+	if err = R.Permit(viewerRole.ID, viewSomething, Read); err != nil {
+		t.Fatalf("can not permit Read action to role %s", viewerRole.ID)
+	}
+
+	if !R.IsGranted(viewerRole.ID, viewSomething, Read) {
+		t.Fatalf("viewerRole role should have Read actions granted")
+	}
+
+	// admin Role
 	adminRole, err := R.RegisterRole("admin", "Admin role")
 	if err != nil {
 		t.Fatalf("can not add admin role, err: %v", err)
 	}
-
 	if _, err = R.RegisterRole("admin", "Admin role"); err == nil {
 		t.Fatalf("should get error when re-registering role")
 	}
-
 	if err = R.Permit(adminRole.ID, usersPerm, crudActions...); err != nil {
 		t.Fatalf("can not permit all crud actions to role %s", adminRole.ID)
 	}
-
 	if !R.IsGranted(adminRole.ID, usersPerm, crudActions...) {
 		t.Fatalf("admin role should have all crud actions granted")
 	}
-
 	if R.IsGranted(adminRole.ID, usersPerm, "unknown") {
 		t.Fatalf("admin role should not have unknown action granted")
 	}
-
-	sysAdmRole, err := R.RegisterRole("sysadm", "System admin role")
-	if err != nil {
-		t.Fatalf("can not add agent role, err: %v", err)
-	}
-
 	if err = adminRole.AddParent(viewerRole); err != nil {
 		t.Fatalf("adding parent role failed with: %v", err)
 	}
 
-	if err = sysAdmRole.AddParent(adminRole); err != nil {
+	// sysAdmin Role
+	sysAdminRole, err := R.RegisterRole("sysAdmin", "System admin role")
+	if err != nil {
+		t.Fatalf("can not add agent role, err: %v", err)
+	}
+	if err = R.Permit(sysAdminRole.ID, postPerm, append(crudActions, ApproveAction)...); err != nil {
+		t.Fatalf("can not permit all crud actions to role %s", adminRole.ID)
+	}
+	if err = sysAdminRole.AddParent(adminRole); err != nil {
 		t.Fatalf("adding parent role failed with: %v", err)
 	}
 
-	if err = adminRole.AddParent(sysAdmRole); strings.Index(err.Error(), "circular") == -1 {
-		t.Fatalf("circular parent check failed with err: %v", err)
+	// Test Permit branches
+	if err = R.Permit(sysAdminRole.ID, nil, ApproveAction); err == nil {
+		t.Fatalf("Permit should fail with nil permission")
+	}
+	if err = R.Permit(sysAdminRole.ID, viewSomething, ApproveAction); err == nil {
+		t.Fatalf("Permit should fail with invalid action for permission")
+	}
+	if err = R.Permit("fake_role", viewSomething, ApproveAction); err == nil {
+		t.Fatalf("Permit should fail with nonexisting role")
 	}
 
-	if ok := adminRole.HasParent(viewerRole.ID); !ok {
-		t.Fatalf("adminRole should have viewerRole as parent.")
+	// Test Revoke branches
+	if err = R.Revoke(sysAdminRole.ID, nil, ApproveAction); err == nil {
+		t.Fatalf("Revoke should fail with nil permission")
+	}
+	if err = R.Revoke(sysAdminRole.ID, viewSomething, ApproveAction); err == nil {
+		t.Fatalf("Revoke should fail with invalid action for permission")
+	}
+	if err = R.Revoke("fake_role", viewSomething, ApproveAction); err == nil {
+		t.Fatalf("Revoke should fail with nonexisting role")
 	}
 
-	if ok := sysAdmRole.HasParent(adminRole.ID); !ok {
-		t.Fatalf("sysAdmRole should have adminRole as parent.")
+	// Test IsGranted branches
+	if R.IsGranted(sysAdminRole.ID, nil, ApproveAction) {
+		t.Fatalf("IsGranted should fail with nil permission")
 	}
-
-	if ok := sysAdmRole.HasParent(viewerRole.ID); !ok {
-		t.Fatalf("sysAdmRole should have viewerRole as parent.")
+	if !R.IsGranted(adminRole.ID, usersPerm, crudActions...) {
+		t.Fatalf("sysAdmin role should have all crud actions granted")
 	}
-
-	if ok := sysAdmRole.HasParent(noparentRole.ID); ok {
-		t.Fatalf("sysAdmRole should not have noparentRole as parent.")
-	}
-
-	if err = viewerRole.AddParent(sysAdmRole); strings.Index(err.Error(), "circular") == -1 {
-		t.Fatalf("circular parent check failed with err: %v", err)
-	}
-
-	if !R.IsGranted(sysAdmRole.ID, usersPerm, crudActions...) {
-		t.Fatalf("sysadmin role should have all crud actions granted")
-	}
-
 	if !adminRole.isGranted(usersPerm, crudActions...) {
 		t.Fatalf("admin role should have all crud actions granted")
 	}
 
-	if err = sysAdmRole.RemoveParent(adminRole); err != nil {
+	// Test IsGrantInherited branches
+	if R.IsGrantInherited(sysAdminRole.ID, nil, ApproveAction) {
+		t.Fatalf("IsGrantInherited should fail with nil permission")
+	}
+	if R.IsGrantInherited(sysAdminRole.ID, usersPerm, ApproveAction) {
+		t.Fatalf("IsGrantInherited should fail with invalid action for permission")
+	}
+	if !R.IsGrantInherited(sysAdminRole.ID, usersPerm, crudActions...) {
+		t.Fatalf("sysAdmin role should have all crud actions granted")
+	}
+	if !adminRole.isGrantInherited(usersPerm, crudActions...) {
+		t.Fatalf("admin role should have all crud actions granted")
+	}
+	if R.IsGrantInherited("fake_role", usersPerm, crudActions...) {
+		t.Fatalf("noexisting role should not have all crud actions granted")
+	}
+
+	// Check circular heritage.
+	if err = sysAdminRole.AddParent(adminRole); err == nil {
+		t.Fatalf("Should not be able to add adminRole as parent to sysAdminRole again.")
+	}
+	if err = viewerRole.AddParent(sysAdminRole); strings.Index(err.Error(), "circular") == -1 {
+		t.Fatalf("circular parent check failed with err: %v", err)
+	}
+
+	// Check inheritance
+	if ok := adminRole.HasParent(viewerRole.ID); !ok {
+		t.Fatalf("adminRole should have viewerRole as parent.")
+	}
+	if ok := adminRole.HasAncestor(viewerRole.ID); !ok {
+		t.Fatalf("adminRole should have viewerRole as ancestor.")
+	}
+	if ok := sysAdminRole.HasParent(viewerRole.ID); ok {
+		t.Fatalf("sysAdminRole should not have viewerRole as parent.")
+	}
+	if ok := sysAdminRole.HasAncestor(viewerRole.ID); !ok {
+		t.Fatalf("sysAdminRole should have viewerRole as ancestor.")
+	}
+	if ok := sysAdminRole.HasParent(noparentRole.ID); ok {
+		t.Fatalf("sysAdminRole should not have noparentRole as parent.")
+	}
+	if ok := sysAdminRole.HasAncestor(noparentRole.ID); ok {
+		t.Fatalf("sysAdminRole should not have noparentRole as ancestor.")
+	}
+
+	// Check hasAction branches
+	if hasAction([]Action{ApproveAction}, Read) {
+		t.Fatalf("Read should not be in this action list")
+	}
+
+	// Check AnyGranted branches
+	if !R.AnyGranted([]string{adminRole.ID, sysAdminRole.ID}, usersPerm, Delete) {
+		t.Fatalf("roles should have users.delete")
+	}
+	if R.AllGranted([]string{adminRole.ID, sysAdminRole.ID}, usersPerm, Create) {
+		t.Fatalf("roles should not have users.create")
+	}
+
+	// Check AnyGrantInherited branches
+	if !R.AnyGrantInherited([]string{adminRole.ID, sysAdminRole.ID}, postPerm, ApproveAction) {
+		t.Fatalf("one role should have postPerm.ApproveAction")
+	}
+	if !R.AllGrantInherited([]string{adminRole.ID, sysAdminRole.ID}, viewSomething, Read) {
+		t.Fatalf("roles should all have viewSomething.Read")
+	}
+	if R.AllGrantInherited([]string{adminRole.ID, viewerRole.ID}, usersPerm, Create) {
+		t.Fatalf("veiwer role should not have userPerm.Create")
+	}
+
+	if err = sysAdminRole.RemoveParent(adminRole); err != nil {
 		t.Fatalf("removing parent role failed with: %v", err)
 	}
 
-	if err = sysAdmRole.AddParent(adminRole); err != nil {
+	if err = sysAdminRole.AddParent(adminRole); err != nil {
 		t.Fatalf("adding parent role failed with: %v", err)
 	}
 
@@ -162,8 +280,8 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("unable to load from json file, err:%v", err)
 	}
 
-	if !RNew.IsGranted(sysAdmRole.ID, usersPerm, crudActions...) {
-		t.Fatalf("sysadmin role should have all crud actions granted")
+	if !RNew.IsGranted(adminRole.ID, usersPerm, crudActions...) {
+		t.Fatalf("sysAdmin role should have all crud actions granted")
 	}
 
 	R2 := R.Clone(false)
@@ -180,7 +298,7 @@ func TestRBAC(t *testing.T) {
 	}
 	aPerms := R2.GetAllPermissions([]string{adminRole.ID})
 	if us, ok := aPerms[usersPerm.ID]; !ok {
-		t.Fatalf("users permission must exit in all perms of sysadmin role(inherited)")
+		t.Fatalf("users permission must exit in all perms of sysAdmin role(inherited)")
 	} else {
 		found := false
 		for _, a := range us {
@@ -190,11 +308,11 @@ func TestRBAC(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Fatalf("Delete action is missing in users permission for all permissions of sysadmin role(inherited)")
+			t.Fatalf("Delete action is missing in users permission for all permissions of sysAdmin role(inherited)")
 		}
 	}
 
-	sPerms := R2.GetAllPermissions([]string{sysAdmRole.ID})
+	sPerms := R2.GetAllPermissions([]string{sysAdminRole.ID})
 	if us, ok := sPerms[usersPerm.ID]; !ok {
 		t.Fatalf("users permission must exit in all perms of admin role")
 	} else {
@@ -210,7 +328,7 @@ func TestRBAC(t *testing.T) {
 		}
 	}
 
-	if R2.RemoveRole(sysAdmRole.ID); err != nil {
+	if R2.RemoveRole(sysAdminRole.ID); err != nil {
 		t.Fatalf("removing role failed with: %v", err)
 	}
 
@@ -222,11 +340,25 @@ func TestRBAC(t *testing.T) {
 		t.Fatalf("perm should have delete action")
 	}
 
-	if R2.AnyGranted([]string{adminRole.ID, sysAdmRole.ID}, usersPerm, Delete) {
+	if R2.AnyGranted([]string{adminRole.ID, sysAdminRole.ID}, usersPerm, Delete) {
 		t.Fatalf("roles should not have users.delete")
 	}
-	if R2.AllGranted([]string{adminRole.ID, sysAdmRole.ID}, usersPerm, Create) {
+	if R2.AllGranted([]string{adminRole.ID, sysAdminRole.ID}, usersPerm, Create) {
 		t.Fatalf("roles should have users.create")
+	}
+
+	// Test Remove parent.
+	if !adminRole.HasParent(viewerRole.ID) {
+		t.Fatal("viewerRole should be a parent of adminRole.")
+	}
+	if R.RemoveRole(viewerRole.ID); err != nil {
+		t.Fatalf("removing role failed with: %v", err)
+	}
+	if adminRole.HasParent(viewerRole.ID) {
+		t.Fatal("viewerRole should no longer be a parent of adminRole.")
+	}
+	if sysAdminRole.HasAncestor(viewerRole.ID) {
+		t.Fatal("viewerRole should no longer be an ancestor of sysAdminRole.")
 	}
 }
 
