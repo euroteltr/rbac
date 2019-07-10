@@ -3,6 +3,7 @@ package rbac
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 )
 
@@ -46,6 +47,17 @@ func (p *Permission) Actions() []Action {
 		res = append(res, k.(Action))
 		return true
 	})
+	return res
+}
+
+// ActionsStrSlice returns list of Actions as sorted string slice
+func (p *Permission) ActionsStrSlice() []string {
+	res := []string{}
+	p.Range(func(k, v interface{}) bool {
+		res = append(res, string(k.(Action)))
+		return true
+	})
+	sort.Strings(res)
 	return res
 }
 

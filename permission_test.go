@@ -2,6 +2,8 @@ package rbac
 
 import (
 	"encoding/json"
+	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -28,4 +30,12 @@ func TestPermission(t *testing.T) {
 		t.Fatalf("test permission actions are not valid, expected %d items, got %d items", len(crudActions), len(testPerm.Actions()))
 	}
 
+	strActions := []string{}
+	for _, a := range crudActions {
+		strActions = append(strActions, string(a))
+	}
+	sort.Strings(strActions)
+	if !reflect.DeepEqual(testPerm.ActionsStrSlice(), strActions) {
+		t.Fatalf("test permission actions are not valid, expected %d items, got %d items", testPerm.ActionsStrSlice(), strActions)
+	}
 }
