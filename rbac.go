@@ -62,7 +62,7 @@ func (r *RBAC) Clone(roles bool) (trg *RBAC) {
 func (r *RBAC) RegisterPermission(permissionID, description string, actions ...Action) (*Permission, error) {
 	if r.IsPermissionExist(permissionID, "") {
 		log.Errorf("permission %s is already registered", permissionID)
-		return nil, fmt.Errorf("permission %s is already registered", permissionID)
+		return r.GetPermission(permissionID), fmt.Errorf("permission %s is already registered", permissionID)
 	}
 	perm := newPermission(permissionID, description, actions...)
 	r.permissions.Store(permissionID, perm)

@@ -36,6 +36,6 @@ func TestPermission(t *testing.T) {
 	}
 	sort.Strings(strActions)
 	if !reflect.DeepEqual(testPerm.ActionsStrSlice(), strActions) {
-		t.Fatalf("test permission actions are not valid, expected %d items, got %d items", testPerm.ActionsStrSlice(), strActions)
+		t.Fatalf("test permission actions are not valid, expected %d items, got %d items", len(testPerm.ActionsStrSlice()), len(strActions))
 	}
 }
